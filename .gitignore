@@ -1,11 +1,13 @@
-Binaries/
-Build/
+# Visual Studio junk
+.vs/
+*.ipch
+UpgradeLog*.htm
+
+# JetBrains Rider junk
+.idea/
+
+# Build output (if using UE/typical C++ layout)
+[Bb]inaries/
+[Ii]ntermediate/
+[Ss]aved/
 DerivedDataCache/
-Intermediate/
-Saved/
-*.VC.db
-*.opensdf
-*.sdf
-*.suo
-*.sln
-*.DS_Store

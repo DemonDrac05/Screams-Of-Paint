@@ -1,8 +1,18 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{51736D8C-4816-42A1-0BED-F2B6B02A7877}",
+	"EngineAssociation": "{2A2665CE-4112-495C-BFA9-C4BC6AA4219F}",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "ScreamsOfPaint",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",
@@ -13,6 +23,14 @@
 		},
 		{
 			"Name": "GameplayStateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "AbilitySystemGameFeatureActions",
 			"Enabled": true
 		}
 	]
