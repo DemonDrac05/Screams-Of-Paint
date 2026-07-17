@@ -18,7 +18,10 @@ public class ScreamsOfPaint : ModuleRules
             "GameplayTags",
             "GameplayAbilities",
             "GameplayTasks",
-            "Niagara"
+            "Niagara",
+            
+            "Json",
+            "JsonUtilities",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
