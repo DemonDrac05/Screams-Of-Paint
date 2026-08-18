@@ -1,6 +1,8 @@
 ﻿#pragma once
+
 #include "CoreMinimal.h"
 #include "PaintTypes.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
@@ -51,9 +53,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Paint")
 	TMap<EPaintColor, int32> DefaultPaintAmmo;
 	
-	UPROPERTY(VisibleAnywhere, Category = "Weapon|Paint")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Weapon|Paint")
 	TMap<EPaintColor, int32> PaintAmmo;
 	
+	// ===== Camera =====
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+	UCameraComponent* Camera;
+	
+	// ===== Functions =====
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Paint")
 	bool RemovePaint(EPaintColor Color, int32 Quantity);
 	
@@ -62,4 +69,7 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	bool HasPaint(EPaintColor Color) const;
+	
+	UFUNCTION(BlueprintCallable)
+	void InitializeCamera(UCameraComponent* InCamera);
 };

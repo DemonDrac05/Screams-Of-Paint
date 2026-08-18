@@ -7,7 +7,7 @@ AWeaponBase::AWeaponBase()
 	DefaultPaintAmmo = {
 		{ EPaintColor::Red,		5},
 		{ EPaintColor::Yellow,	50},
-		{ EPaintColor::Blue,		5},
+		{ EPaintColor::Blue,		30},
 		{ EPaintColor::White,		5},
 		{ EPaintColor::Black,		5}
 	};
@@ -15,10 +15,15 @@ AWeaponBase::AWeaponBase()
 	PaintAmmo = {
 		{ EPaintColor::Red,		5},
 		{ EPaintColor::Yellow,	50},
-		{ EPaintColor::Blue,		5},
+		{ EPaintColor::Blue,		30},
 		{ EPaintColor::White,		5},
 		{ EPaintColor::Black,		5}
 	};
+}
+
+void AWeaponBase::InitializeCamera(UCameraComponent* InCamera)
+{
+	Camera = InCamera;
 }
 
 bool AWeaponBase::AddPaint(EPaintColor Color, int32 Quantity)
@@ -30,7 +35,7 @@ bool AWeaponBase::AddPaint(EPaintColor Color, int32 Quantity)
 	return true;
 }
 
-bool AWeaponBase::RemovePainṭ̣̣̣(EPaintColor Color, int32 Quantity)
+bool AWeaponBase::RemovePaint(EPaintColor Color, int32 Quantity)
 {
 	int32* Current = PaintAmmo.Find(Color);
 	if (!Current) return false;
