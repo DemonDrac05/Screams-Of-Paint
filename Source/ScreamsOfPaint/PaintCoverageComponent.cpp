@@ -33,6 +33,8 @@ void UPaintCoverageComponent::TickComponent(float DT, ELevelTick Tick,
 
     for (auto& B : Blobs)
         B.Radius = FMath::FInterpTo(B.Radius, B.TargetRadius, DT, SpreadInterpSpeed);
+    
+    StartDecaying(DT);
 
     PushBlobsToMaterials();
 }
@@ -92,9 +94,11 @@ void UPaintCoverageComponent::PushBlobsToMaterials()
 
 void UPaintCoverageComponent::RegisterHit(
     FVector WorldHitPos, FName BoneName,
-    EPaintColor Color, float SplatSize)
+    EPaintColor Color, const float PaintAmount)
 {
     if (!GetOwner()) return;
+    
+    if (PaintAmount < 1.f) TimeSinceLastHit.FindOrAdd(Color) = 0.f;
 
     auto* SkMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
     FVector BoneLocalPos = WorldHitPos;
@@ -110,19 +114,6 @@ void UPaintCoverageComponent::RegisterHit(
         UE_LOG(LogTemp, Warning, TEXT("[Paint] Bone=%s LocalPos=(%.1f, %.1f, %.1f) Blobs=%d"),
             *BoneName.ToString(),
             BoneLocalPos.X, BoneLocalPos.Y, BoneLocalPos.Z, Blobs.Num());
-
-    // Overcharge ──────────────────────────────────────────────
-    if (bSingleTriggered.FindRef(Color))
-    {
-        float& OC = Overcharge.FindOrAdd(Color);
-        OC = FMath::Clamp(OC + SplatSize, 0.f, OverchargeThreshold);
-        if (OC >= OverchargeThreshold)
-        {
-            TriggerOvercharge(Color);
-            bSingleTriggered[Color] = false;
-        }
-        return;
-    }
 
     // Blob merge ────────────────────────────────────────────────
     auto ToWorld = [SkMesh](const FPaintBlob& B) -> FVector
@@ -141,7 +132,7 @@ void UPaintCoverageComponent::RegisterHit(
 
     if (Same)
     {
-        Same->PaintAmount = FMath::Min(Same->PaintAmount + SplatSize, 1.f);
+        Same->PaintAmount = FMath::Min(Same->PaintAmount + PaintAmount, 1.f);
         Same->TargetRadius = FMath::Pow(Same->PaintAmount, SpreadExponent);
         Same->Radius = FMath::Max(Same->Radius, Same->TargetRadius * InstantSplatFraction);
         Same->Sequence = NextSequence++;
@@ -149,8 +140,8 @@ void UPaintCoverageComponent::RegisterHit(
     else
     {
         FPaintBlob NewB{ BoneName, BoneLocalPos, 0.f, 0.f, 0.f, Color };
-        NewB.PaintAmount    = SplatSize;
-        NewB.TargetRadius   = FMath::Pow(SplatSize, SpreadExponent);
+        NewB.PaintAmount    = PaintAmount;
+        NewB.TargetRadius   = FMath::Pow(PaintAmount, SpreadExponent);
         NewB.Radius         = NewB.TargetRadius * InstantSplatFraction;
         NewB.Sequence       = NextSequence++;
         Blobs.Add(NewB);
@@ -158,7 +149,7 @@ void UPaintCoverageComponent::RegisterHit(
 
     // Coverage ─────────────────────────────────────────────────────────────
     float& Cov = Coverage.FindOrAdd(Color);
-    Cov = FMath::Clamp(Cov + SplatSize, 0.f, 1.f);
+    Cov = FMath::Clamp(Cov + PaintAmount, 0.f, 1.f);
 
     if (bEnableComboAndSingle)
     {
@@ -195,6 +186,46 @@ void UPaintCoverageComponent::RegisterHit(
     if (Cov >= 1.f) TriggerSingle(Color);
     
     PushBlobsToMaterials();
+}
+
+void UPaintCoverageComponent::StartDecaying(float DT)
+{
+    if (TimeSinceLastHit.IsEmpty()) return;
+    
+    bool bHasChanged = false;
+    
+    for (auto It = TimeSinceLastHit.CreateIterator(); It; ++It)
+    {
+        It.Value() += DT;
+        if (It.Value() < DecayGracePeriod) continue;
+        
+        const EPaintColor DecayColor = It.Key();
+        const float Loss = DecayRate * DT;
+        bool bAnyLeft = false;
+        
+        for (int32 i = Blobs.Num() - 1; i >= 0; --i)
+        {
+            FPaintBlob& Blob = Blobs[i];
+            if (Blob.Color != DecayColor) continue;
+            
+            Blob.PaintAmount = FMath::Max(Blob.PaintAmount - Loss, DecayFloor);
+            
+            if (Blob.PaintAmount <= KINDA_SMALL_NUMBER)
+            {
+                Blobs.RemoveAt(i);
+            }
+            else
+            {
+                Blob.TargetRadius = FMath::Pow(Blob.PaintAmount, SpreadExponent);
+                bAnyLeft = true;
+            }
+            bHasChanged = true;
+        }
+        
+        if (!bAnyLeft) It.RemoveCurrent();
+    }
+    
+    if (bHasChanged) PushBlobsToMaterials();
 }
 
 void UPaintCoverageComponent::TriggerSingle(EPaintColor Color)
@@ -238,8 +269,8 @@ void UPaintCoverageComponent::TriggerCombo(const FComboTableRow& Row, float Inte
 void UPaintCoverageComponent::ClearPaintOfColor(EPaintColor Color)
 {
     Coverage.Remove(Color);
-    Overcharge.Remove(Color);
     bSingleTriggered.Remove(Color);
+    TimeSinceLastHit.Remove(Color);
     Blobs.RemoveAll([Color](const FPaintBlob& B){ return B.Color == Color; });
     PushBlobsToMaterials();
 }
@@ -248,7 +279,7 @@ void UPaintCoverageComponent::ClearAllPaint()
 {
     Coverage.Empty();
     Blobs.Empty();
-    Overcharge.Empty();
+    TimeSinceLastHit.Empty();
     PushBlobsToMaterials();
 }
 

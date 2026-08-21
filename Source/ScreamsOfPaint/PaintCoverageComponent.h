@@ -29,8 +29,9 @@ public:
     UPaintCoverageComponent() { PrimaryComponentTick.bCanEverTick = true; }
 
     UFUNCTION(BlueprintCallable, Category="Paint")
-    void RegisterHit(FVector WorldHitPos, FName BoneName, EPaintColor Color, float SplatSize);
+    void RegisterHit(FVector WorldHitPos, FName BoneName, EPaintColor Color, float PaintAmount);
 
+    // ————— BLOB —————————— 
     UPROPERTY(EditAnywhere, Category="Paint|Blob")
     float MergeDistance = 15.f;
 
@@ -40,12 +41,7 @@ public:
     UPROPERTY(EditAnywhere, Category="Paint|Blob")
     bool bClearAllColorsOnTrigger = false;
 
-    // UPROPERTY(EditAnywhere, Category="Paint|Visual")
-    // float BlobRadiusScale = 60.f;
-    //
-    // UPROPERTY(EditAnywhere, Category="Paint|Visual")
-    // float MaxBlobWorldRadius = 45.f;
-    
+    // ————— VISUAL ——————————
     UPROPERTY(EditAnywhere, Category="Paint|Visual")
     float FullBodyRadius = 115.f;
     
@@ -61,6 +57,17 @@ public:
     UPROPERTY(VisibleAnywhere, Category="Paint|Visual")
     TArray<UMaterialInstanceDynamic*> MeshMIDs;
 
+    // ————— DECAY ——————————
+    UPROPERTY(EditAnywhere, Category="Paint|Decay")
+    float DecayGracePeriod = 3.f;
+    
+    UPROPERTY(EditAnywhere, Category="Paint|Decay")
+    float DecayRate = .15f;
+    
+    UPROPERTY(EditAnywhere, Category="Paint|Decay")
+    float DecayFloor = 0.f;
+    
+    // ————— DEBUG ——————————
     UPROPERTY(EditAnywhere, Category="Paint|Debug")
     bool bDebugLogHits = false;
     
@@ -83,11 +90,12 @@ private:
     void PushBlobsToMaterials();
     void ClearPaintOfColor(EPaintColor Color);
     void ClearAllPaint();
+    void StartDecaying(float DT);
 
     FLinearColor GetPaintLinearColor(EPaintColor Color) const;
 
     TArray<FPaintBlob>       Blobs;
     TMap<EPaintColor, float> Coverage;
     TMap<EPaintColor, bool>  bSingleTriggered;
-    TMap<EPaintColor, float> Overcharge;
+    TMap<EPaintColor, float> TimeSinceLastHit;
 };
