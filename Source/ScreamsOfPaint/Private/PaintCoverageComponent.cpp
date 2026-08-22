@@ -7,6 +7,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "SingleTableRow.h"
 #include "SOPPaintComboSubsystem.h"
+#include "UIIndicatorSubsystem.h"
 
 void UPaintCoverageComponent::BeginPlay()
 {
@@ -97,8 +98,14 @@ void UPaintCoverageComponent::RegisterHit(
     EPaintColor Color, const float PaintAmount)
 {
     if (!GetOwner()) return;
+
+    // Register to UI subsystem
+    if (UUIIndicatorSubsystem* Sub = GetWorld()->GetSubsystem<UUIIndicatorSubsystem>())
+        Sub->RegisterEnemy(this->GetOwner());
     
-    if (PaintAmount < 1.f) TimeSinceLastHit.FindOrAdd(Color) = 0.f;
+    // Set grace period timer
+    if (PaintAmount < 1.f) 
+        TimeSinceLastHit.FindOrAdd(Color) = 0.f;
 
     auto* SkMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
     FVector BoneLocalPos = WorldHitPos;
@@ -115,7 +122,7 @@ void UPaintCoverageComponent::RegisterHit(
             *BoneName.ToString(),
             BoneLocalPos.X, BoneLocalPos.Y, BoneLocalPos.Z, Blobs.Num());
 
-    // Blob merge ────────────────────────────────────────────────
+    // Blob merge 
     auto ToWorld = [SkMesh](const FPaintBlob& B) -> FVector
     {
         if (!SkMesh || B.BoneName == NAME_None) return B.BoneLocalPos;
@@ -272,6 +279,11 @@ void UPaintCoverageComponent::ClearPaintOfColor(EPaintColor Color)
     bSingleTriggered.Remove(Color);
     TimeSinceLastHit.Remove(Color);
     Blobs.RemoveAll([Color](const FPaintBlob& B){ return B.Color == Color; });
+    
+    if (Blobs.Num() == 0)
+        if (auto* Sub = GetWorld()->GetSubsystem<UUIIndicatorSubsystem>())
+            Sub->UnregisterEnemy(this->GetOwner());
+    
     PushBlobsToMaterials();
 }
 
@@ -280,6 +292,11 @@ void UPaintCoverageComponent::ClearAllPaint()
     Coverage.Empty();
     Blobs.Empty();
     TimeSinceLastHit.Empty();
+    
+    if (Blobs.Num() == 0)
+        if (auto* Sub = GetWorld()->GetSubsystem<UUIIndicatorSubsystem>())
+            Sub->UnregisterEnemy(this->GetOwner());
+    
     PushBlobsToMaterials();
 }
 
