@@ -40,6 +40,29 @@ void UPaintCoverageComponent::TickComponent(float DT, ELevelTick Tick,
     PushBlobsToMaterials();
 }
 
+void UPaintCoverageComponent::GetPaintStatusInfo(TArray<FPaintStatusInfo>& OutInfos) const
+{
+    OutInfos.Reset();
+    
+    for (auto const& Pair : Coverage)
+    {
+        if (Pair.Value <= KINDA_SMALL_NUMBER) continue;
+        
+        const FLinearColor C = GetPaintLinearColor(Pair.Key);
+        if (C == FLinearColor::Gray) continue;
+        
+        FPaintStatusInfo Info;
+        Info.Color   = C;
+        Info.Percent = Pair.Value;
+        OutInfos.Add(Info);
+    }
+    
+    OutInfos.Sort([](const FPaintStatusInfo& A, const FPaintStatusInfo& B)
+    {
+        return A.Percent > B.Percent;
+    });
+}
+
 void UPaintCoverageComponent::PushBlobsToMaterials()
 {
     auto* SkMesh = GetOwner()
@@ -190,7 +213,7 @@ void UPaintCoverageComponent::RegisterHit(
     }
     
     // Single check ─────────────────────────────────────────────────────────
-    if (Cov >= 1.f) TriggerSingle(Color);
+    // if (Cov >= 1.f) TriggerSingle(Color);
     
     PushBlobsToMaterials();
 }
@@ -304,11 +327,11 @@ FLinearColor UPaintCoverageComponent::GetPaintLinearColor(EPaintColor Color) con
 {
     switch (Color)
     {
-    case EPaintColor::Red:    return FLinearColor(1.f,   0.f,  0.f,  1.f);
-    case EPaintColor::Blue:   return FLinearColor(0.f,   0.3f, 1.f,  1.f);
-    case EPaintColor::Yellow: return FLinearColor(1.f,   0.9f, 0.f,  1.f);
-    case EPaintColor::White:  return FLinearColor(1.f,   1.f,  1.f,  1.f);
-    case EPaintColor::Black:  return FLinearColor(0.05f, 0.05f,0.1f, 1.f);
-    default:                  return FLinearColor::Gray;
+        case EPaintColor::Red:    return FLinearColor(1.f,   0.f,  0.f,  1.f);
+        case EPaintColor::Blue:   return FLinearColor(0.f,   0.3f, 1.f,  1.f);
+        case EPaintColor::Yellow: return FLinearColor(1.f,   0.9f, 0.f,  1.f);
+        case EPaintColor::White:  return FLinearColor(1.f,   1.f,  1.f,  1.f);
+        case EPaintColor::Black:  return FLinearColor(0.05f, 0.05f,0.1f, 1.f);
+        default:                  return FLinearColor::Gray;
     }
 }

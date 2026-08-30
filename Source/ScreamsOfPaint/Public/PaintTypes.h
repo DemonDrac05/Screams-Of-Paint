@@ -1,4 +1,3 @@
-// PaintTypes.h
 #pragma once
 #include "CoreMinimal.h"
 #include "PaintTypes.generated.h"

@@ -1,5 +1,4 @@
-﻿// AvantGravePaintAttributeSet.cpp
-#include "SOPAttributeSet.h"
+﻿#include "SOPAttributeSet.h"
 #include "Net/UnrealNetwork.h"
 
 void USOPAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

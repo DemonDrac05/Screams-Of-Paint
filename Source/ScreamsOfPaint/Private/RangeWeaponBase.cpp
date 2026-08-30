@@ -33,6 +33,17 @@ void ARangeWeaponBase::SetData(const FRangeWeaponData& InData)
 		const int64 Value = Enum->GetValueByNameString(WeaponData.LockedColor);
 		if (Value != INDEX_NONE) CurrentColor = static_cast<EPaintColor>(Value);
 	}
+	
+	if (RecoilComp)
+	{
+		RecoilComp->RefreshData(WeaponData.Recoil);
+		RecoilComp->ClearRecoil();
+	}
+}
+
+float ARangeWeaponBase::GetRecoilScale_Implementation()
+{
+	return 1.f;
 }
 
 void ARangeWeaponBase::BeginPlay()
@@ -52,23 +63,24 @@ void ARangeWeaponBase::BeginPlay()
 		OwningCharacter ? *OwningCharacter->GetName() : TEXT("NULL"),
 		Camera ? TEXT("OK") : TEXT("NULL"),
 		RecoilComp ? TEXT("OK") : TEXT("NULL"));
+	
+	if (RecoilComp)
+	{
+		RecoilComp->RefreshData(WeaponData.Recoil);
+
+		if (WeaponData.Id == TEXT("fragment_gun"))
+			RecoilComp->SetRamp(0.05f, 1.6f);
+		else
+			RecoilComp->SetRamp(0.f, 0.f);
+	}
+	
+	if (!UsesMagazine()) return;
+	CurrentShot = MaxShotsPerMagazine;
 }
 
 void ARangeWeaponBase::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	
-	if (ReloadTimer > 0 && bIsReloading)
-	{
-		ReloadTimer -= DeltaSeconds;
-		if (ReloadTimer <= 0.0f)
-		{
-			ReloadTimer = 0.0f;
-			bIsReloading = false;
-			
-			ResetPaintAmmo(CurrentColor);
-		}
-	}
 }
 
 bool ARangeWeaponBase::CanFire()
@@ -86,18 +98,41 @@ bool ARangeWeaponBase::CanFire()
 	return bCan;
 }
 
-void ARangeWeaponBase::Attack()
+bool ARangeWeaponBase::TryAttack()
 {
-	if (!HasEnoughMagazine()) return;
-	if (!CanFire()) return;
-	ProcessFire();
+	if (bHasFinalShot){ FireFinalShot(); return false; }
+	
+	if (!HasEnoughMagazine()) return false;
+	if (!CanFire()) return false;
+	
+	Attack_Implementation();
+	return true;
 }
 
-void ARangeWeaponBase::ProcessFire()
+void ARangeWeaponBase::Attack_Implementation()
+{
+	ProcessFire();
+	
+	if (!UsesMagazine()) return;
+	
+	--CurrentShot;
+	if (CurrentShot == 0)
+	{
+		bAllowRapidFire = false;
+		PrepareFinalShot();
+	}
+}
+
+void ARangeWeaponBase::ReloadMagazine()
+{
+	CurrentShot = MaxShotsPerMagazine;
+}
+
+void ARangeWeaponBase::ProcessFire_Implementation()
 {
 	CalculateBulletPath();
 	RemovePaint(CurrentColor, PaintCost);
-	if (RecoilComp) RecoilComp->ApplyRecoil();
+	if (RecoilComp) RecoilComp->ApplyRecoilScaled(GetRecoilScale());
 }
 
 void ARangeWeaponBase::CalculateBulletPath()
@@ -154,8 +189,7 @@ void ARangeWeaponBase::CalculateBulletPath()
 							-1,
 							5.f,
 							FColor::Yellow,
-							FString::Printf(
-								TEXT("Hit impact point: %s | Hit bone name: %s"),
+							FString::Printf(TEXT("Hit impact point: %s | Hit bone name: %s"),
 								*Hit.ImpactPoint.ToString(),
 								*Hit.BoneName.ToString()
 							)
@@ -204,31 +238,12 @@ FVector ARangeWeaponBase::FindTargetPoint() const
     return (TargetPoint - Muzzle->GetComponentLocation()).GetSafeNormal();
 }
 
-void ARangeWeaponBase::ResetMagazine()
-{
-	if (bIsReloading) return;
-	bIsReloading = true;
-	
-	GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &ARangeWeaponBase::FinishReload, WeaponData.ReloadTime, false);
-}
-
-void ARangeWeaponBase::FinishReload()
-{
-	bIsReloading = false;
-	ResetPaintAmmo(CurrentColor);
-}
-
 bool ARangeWeaponBase::HasEnoughMagazine()
 {
-	return PaintAmmo[CurrentColor] > 0;
+	return CurrentPaintAmmo[CurrentColor] > 0;
 }
 
-bool ARangeWeaponBase::AllowRapidFire() const
+void ARangeWeaponBase::Release_Implementation()
 {
-	return false;
-}
-
-void ARangeWeaponBase::Release()
-{
-	
+	if (RecoilComp) RecoilComp->ResetRamp();
 }

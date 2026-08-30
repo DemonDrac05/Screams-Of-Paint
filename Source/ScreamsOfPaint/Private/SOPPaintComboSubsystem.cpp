@@ -1,5 +1,4 @@
-﻿// SOPPaintComboSubsystem.cpp
-#include "SOPPaintComboSubsystem.h"
+﻿#include "SOPPaintComboSubsystem.h"
 #include "Engine/DataTable.h"
 #include "ComboTableRow.h"
 #include "SingleTableRow.h"

@@ -1,6 +1,8 @@
 ﻿#include "WeaponControllerComponent.h"
 #include "WeaponDataLibrary.h"
 #include "RecoilComponent.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 
 UWeaponControllerComponent::UWeaponControllerComponent()
 {
@@ -79,17 +81,24 @@ void UWeaponControllerComponent::SwapWeapon(float ScrollValue)
     SelectWeapon(Next);
 }
 
-void UWeaponControllerComponent::ReloadWeaponData()
-{
-    ApplyDataToWeapons();
-    if (const ARangeWeaponBase* RW = Cast<ARangeWeaponBase>(CurrentWeapon); RW && Recoil)
-        Recoil->RefreshData(RW->GetRecoilData());
-}
+// void UWeaponControllerComponent::ReloadWeaponData()
+// {
+//     ApplyDataToWeapons();
+//     if (const ARangeWeaponBase* RW = Cast<ARangeWeaponBase>(CurrentWeapon); RW && Recoil)
+//         Recoil->RefreshData(RW->GetRecoilData());
+// }
 
-bool UWeaponControllerComponent::AllowRapidAttack() const
+void UWeaponControllerComponent::Attack()
 {
-    return CurrentWeapon && CurrentWeapon->AllowRapidFire();
+    if (!CurrentWeapon || bFireHeld) return;
+    
+    if (CurrentWeapon->bHasChargeAttack) { CurrentWeapon->Attack(); return; }
+    
+    if (CurrentWeapon->TryAttack()) if (!CurrentWeapon->bAllowRapidFire) bFireHeld = true;
 }
-
-void UWeaponControllerComponent::Attack()  { if (CurrentWeapon) CurrentWeapon->Attack(); }
-void UWeaponControllerComponent::Release() { if (CurrentWeapon) CurrentWeapon->Release(); }
+void UWeaponControllerComponent::Release()
+{
+    if (!CurrentWeapon) return;
+    bFireHeld = false;
+    CurrentWeapon->Release();
+}

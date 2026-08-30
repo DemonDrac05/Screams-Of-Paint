@@ -1,5 +1,7 @@
 ﻿#include "WeaponBase.h"
 
+#include "Materials/MaterialInstanceDynamic.h"
+
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -12,7 +14,7 @@ AWeaponBase::AWeaponBase()
 		{ EPaintColor::Black,		5}
 	};
 	
-	PaintAmmo = {
+	CurrentPaintAmmo = {
 		{ EPaintColor::Red,		5},
 		{ EPaintColor::Yellow,	50},
 		{ EPaintColor::Blue,		30},
@@ -21,26 +23,28 @@ AWeaponBase::AWeaponBase()
 	};
 }
 
-void AWeaponBase::InitializeCamera(UCameraComponent* InCamera)
+void AWeaponBase::PostInitializeComponents()
 {
-	Camera = InCamera;
+	Super::PostInitializeComponents();
+	
+	// if (!MID && Material) MID = UMaterialInstanceDynamic::Create(Material, this);
 }
 
 bool AWeaponBase::AddPaint(EPaintColor Color, int32 Quantity)
 {
-	int32* Current = PaintAmmo.Find(Color);
+	int32* Current = CurrentPaintAmmo.Find(Color);
 	if (!Current) return false;
 
-	PaintAmmo[Color] = FMath::Max(*Current + Quantity, DefaultPaintAmmo[Color]);
+	CurrentPaintAmmo[Color] = FMath::Max(*Current + Quantity, DefaultPaintAmmo[Color]);
 	return true;
 }
 
 bool AWeaponBase::RemovePaint(EPaintColor Color, int32 Quantity)
 {
-	int32* Current = PaintAmmo.Find(Color);
+	int32* Current = CurrentPaintAmmo.Find(Color);
 	if (!Current) return false;
 
-	PaintAmmo[Color] = FMath::Max(0, *Current - Quantity);
+	CurrentPaintAmmo[Color] = FMath::Max(0, *Current - Quantity);
 	return true;
 }
 
@@ -48,13 +52,13 @@ void AWeaponBase::ResetPaintAmmo(EPaintColor Color)
 {
 	if (const int32* DefaultCurrent = DefaultPaintAmmo.Find(Color))
 	{
-		int32& Current = PaintAmmo.FindOrAdd(Color);
+		int32& Current = CurrentPaintAmmo.FindOrAdd(Color);
 		Current = *DefaultCurrent;
 	}
 }
 
-bool AWeaponBase::HasPaint(EPaintColor Color) const
-{
-	const int32* Current = PaintAmmo.Find(Color);
-	return Current && *Current > 0;
-}
+bool AWeaponBase::TryAttack() { return true; }
+
+void AWeaponBase::Attack_Implementation(){ }
+
+void AWeaponBase::Release_Implementation(){ }

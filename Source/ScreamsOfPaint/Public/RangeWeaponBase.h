@@ -16,9 +16,9 @@ public:
 	ARangeWeaponBase();
 	virtual void SetData(const FRangeWeaponData& InData);
 	
-	virtual void Attack() override;
-	virtual void Release() override;
-	virtual bool AllowRapidFire() const override;
+	virtual bool TryAttack() override;
+	virtual void Attack_Implementation() override;
+	virtual void Release_Implementation() override;
 	
 	FORCEINLINE const FRecoilData& GetRecoilData() const { return WeaponData.Recoil; }
 protected:
@@ -26,18 +26,20 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	
-	UFUNCTION(BlueprintCallable)
-	virtual void ProcessFire();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void ProcessFire();
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	float GetRecoilScale();
 	
 	// ===== Functions ======
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Weapon")
 	bool CanFire();
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="Weapon")
 	bool HasEnoughMagazine();
 	 
-	UFUNCTION(BlueprintCallable)
-	void ResetMagazine();
+	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void CalculateBulletPath();
 	
 	FVector FindTargetPoint() const;
@@ -48,6 +50,28 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 	URecoilComponent* RecoilComp = nullptr;
+	
+	// ===== Fragment Gun ======
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Range|Fragment")
+	bool bHasFinalShot = false;
+	
+	UFUNCTION(BlueprintImplementableEvent, Category="Weapon|Range|Fragment")
+	void PrepareFinalShot();
+	
+	UFUNCTION(BlueprintImplementableEvent, Category="Weapon|Range|Fragment")
+	void FireFinalShot();
+	
+	// ===== Magazine ======
+	FORCEINLINE bool UsesMagazine() const { return MaxShotsPerMagazine > 0; }
+	
+	UPROPERTY(BlueprintReadOnly, Category="Weapon|Magazine")
+	int32 CurrentShot = 0;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Magazine")
+	int32 MaxShotsPerMagazine = 0;
+	
+	UFUNCTION(BlueprintCallable, Category="Weapon|Magazine")
+	void ReloadMagazine();
 	
 private:
 	double LastFireTime = -1000.0;
@@ -63,7 +87,4 @@ private:
 	
 	UPROPERTY()
 	AActor* OwningCharacter = nullptr;
-	
-	UFUNCTION()
-	void FinishReload();
 };

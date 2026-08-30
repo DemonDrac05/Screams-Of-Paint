@@ -26,18 +26,21 @@ public:
 	
 	// ===== Combat Interface =====
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Combat")
-	virtual void Attack() {}
+	virtual bool TryAttack();
 	
-	UFUNCTION(BlueprintCallable, Category = "Weapon|Combat")
-	virtual void Release() {}
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Weapon|Combat")
+    void Attack();
 	
-	virtual bool AllowRapidFire() const { return false; }
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Weapon|Combat")
+	void Release();
 	
-	// ===== Events =====
-	// UPROPERTY(BlueprintAssignable, Category = "Weapon|Paint")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+	bool bAllowRapidFire = false;
 	
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon|Combat")
+	bool bHasChargeAttack = false;
 protected:
+	virtual void PostInitializeComponents() override;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	FName ID;
@@ -54,22 +57,26 @@ protected:
 	TMap<EPaintColor, int32> DefaultPaintAmmo;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Weapon|Paint")
-	TMap<EPaintColor, int32> PaintAmmo;
+	TMap<EPaintColor, int32> CurrentPaintAmmo;
 	
-	// ===== Camera =====
+	// ––––– MATERIAL –––––
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadonly, Category="Weapon|Material")
+	// TObjectPtr<UMaterialInterface> Material;
+	//
+	// UPROPERTY(Transient)
+	// TObjectPtr<UMaterialInstanceDynamic> MID;
+	//
+	// UFUNCTION(BlueprintPure)
+	// UMaterialInstanceDynamic* GetWeaponMID() const { return MID; }
+	
+	// ––––– CAMERA –––––
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 	UCameraComponent* Camera;
 	
-	// ===== Functions =====
+	// ––––– HELPERS –––––
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Paint")
 	bool RemovePaint(EPaintColor Color, int32 Quantity);
 	
 	UFUNCTION(BlueprintCallable)
 	void ResetPaintAmmo(EPaintColor Color);
-	
-	UFUNCTION(BlueprintCallable)
-	bool HasPaint(EPaintColor Color) const;
-	
-	UFUNCTION(BlueprintCallable)
-	void InitializeCamera(UCameraComponent* InCamera);
 };

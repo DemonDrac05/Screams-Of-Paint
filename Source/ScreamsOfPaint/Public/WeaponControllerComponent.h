@@ -1,5 +1,4 @@
-﻿// WeaponControllerComponent.h
-#pragma once
+﻿#pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "WeaponBase.h"
@@ -17,14 +16,14 @@ public:
 
 	UFUNCTION(BlueprintCallable) void Attack();
 	UFUNCTION(BlueprintCallable) void Release();
-	UFUNCTION(BlueprintCallable) bool AllowRapidAttack() const;
 	UFUNCTION(BlueprintCallable) void SwapWeapon(float ScrollValue);
-	UFUNCTION(BlueprintCallable) void ReloadWeaponData();   // bind F5 cho GD
 	UFUNCTION(BlueprintPure)     AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 
 protected:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon")
+	bool bFireHeld = false;
 private:
 	void InitializeWeaponList();
 	void ApplyDataToWeapons();

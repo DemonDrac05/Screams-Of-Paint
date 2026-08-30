@@ -1,5 +1,4 @@
-﻿// SingleTableRow.h
-#pragma once
+﻿#pragma once
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Engine/DataTable.h"

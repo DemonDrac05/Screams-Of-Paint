@@ -20,6 +20,14 @@ struct FPaintBlob
     int32 Sequence = 0;
 };
 
+USTRUCT(BlueprintType)
+struct FPaintStatusInfo
+{
+    GENERATED_BODY()
+    UPROPERTY(BlueprintReadOnly) FLinearColor Color = FLinearColor::White;
+    UPROPERTY(BlueprintReadOnly) float Percent = 0.f;
+};
+
 UCLASS(ClassGroup=Paint, meta=(BlueprintSpawnableComponent))
 class SCREAMSOFPAINT_API UPaintCoverageComponent : public UActorComponent
 {
@@ -30,6 +38,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Paint")
     void RegisterHit(FVector WorldHitPos, FName BoneName, EPaintColor Color, float PaintAmount);
+    
+    UFUNCTION(BlueprintCallable, Category="Paint")
+    void GetPaintStatusInfo(TArray<FPaintStatusInfo>& OutInfos) const;
 
     // ————— BLOB —————————— 
     UPROPERTY(EditAnywhere, Category="Paint|Blob")
@@ -67,6 +78,9 @@ public:
     UPROPERTY(EditAnywhere, Category="Paint|Decay")
     float DecayFloor = 0.f;
     
+    UPROPERTY(EditAnywhere, Category="Paint|Decay")
+    bool bEnableDecay = false;
+    
     // ————— DEBUG ——————————
     UPROPERTY(EditAnywhere, Category="Paint|Debug")
     bool bDebugLogHits = false;
@@ -95,6 +109,7 @@ private:
     FLinearColor GetPaintLinearColor(EPaintColor Color) const;
 
     TArray<FPaintBlob>       Blobs;
+    TArray<FPaintStatusInfo> StatusInfo;
     TMap<EPaintColor, float> Coverage;
     TMap<EPaintColor, bool>  bSingleTriggered;
     TMap<EPaintColor, float> TimeSinceLastHit;
